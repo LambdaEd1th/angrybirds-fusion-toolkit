@@ -1,5 +1,5 @@
 # ==============================================================================
-# Angry Birds Cryptor CLI - Interactive Wrapper Script
+# Angry Birds Fusion Toolkit - Interactive Wrapper Script
 # File: scripts/batch.ps1
 #
 # This script is designed to be placed in the "scripts/" directory.
@@ -9,7 +9,7 @@
 # Allow script execution for this process
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force | Out-Null
 
-$BinName = "angrybirds-cryptor-cli.exe"
+$BinName = "angrybirds-fusion-toolkit.exe"
 
 # Define potential paths for the executable
 # 1. Current directory
@@ -42,27 +42,19 @@ if ($null -eq $ToolPath) {
 
 Clear-Host
 Write-Host "==========================================" -ForegroundColor Cyan
-Write-Host "   Angry Birds Cryptor - Interactive Tool" -ForegroundColor Cyan
+Write-Host "   Angry Birds Fusion Toolkit" -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host "Please select an operation mode:"
 Write-Host "1) Decrypt (Game File -> Readable)"
 Write-Host "2) Encrypt (Readable -> Game File)"
-Write-Host "3) Init Config (Generate config.toml)"
 Write-Host "==========================================" -ForegroundColor Cyan
 
-$modeChoice = Read-Host "Enter number (1-3)"
+$modeChoice = Read-Host "Enter number (1-2)"
 $useAuto = $false
 
 switch ($modeChoice) {
     "1" { $cmd = "decrypt" }
     "2" { $cmd = "encrypt" }
-    "3" {
-        Write-Host "Generating default config file..." -ForegroundColor Yellow
-        & $ToolPath init-config
-        Write-Host "config.toml generated successfully." -ForegroundColor Green
-        Start-Sleep -Seconds 2
-        exit
-    }
     Default {
         Write-Host "Invalid choice. Exiting." -ForegroundColor Red
         exit

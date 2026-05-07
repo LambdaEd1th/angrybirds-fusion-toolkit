@@ -1,15 +1,15 @@
-# Angry Birds Cryptor CLI
+# Angry Birds Fusion Toolkit
 
-**Angry Birds Cryptor CLI** is a robust, cross-platform command-line tool written in **Rust**. It allows users to decrypt and encrypt data files (such as levels, save data, and high scores) used in various *Angry Birds* games.
+**Angry Birds Fusion Toolkit** is a robust, cross-platform tool written in **Rust** for *Angry Birds* titles built on the Fusion engine. Its current shell executable allows users to decrypt and encrypt data files such as levels, save data, high scores, and registry blobs.
 
 This tool is designed for modders, researchers, and enthusiasts who wish to analyze or modify game files legally.
 
 ## 🚀 Key Features
 
-* **AES-256-CBC Support**: Implements the standard encryption algorithm used by the game engine.
+* **AES-256-CBC Support**: Implements the standard encryption algorithm used by the game engine with built-in padding per file type.
 * **Auto-Detection**: The `decrypt` command can automatically brute-force through known keys to identify the correct game and file category.
-* **Multiple File Categories**: Supports `native` (game data), `save` (progress files), and `downloaded` (DLC) formats.
-* **Custom Configuration**: Users can provide their own keys via a `config.toml` file or CLI arguments.
+* **Multiple File Categories**: Supports `native` (game data), `save` (progress files), `downloaded` (DLC), `fusion.registry`, and `beacon.registry`.
+* **Built-in Keys**: Includes built-in keys for supported games and shared registry files.
 * **Cross-Platform**: Compiles for **Windows**, **Linux**, and **macOS** (both Intel and Apple Silicon).
 
 ## 🎮 Supported Games
@@ -25,11 +25,13 @@ The tool includes built-in keys for the following titles:
 * **Angry Birds Star Wars II**
 * **Angry Birds Stella**
 
+It also includes shared built-in keys for `fusion.registry` and `beacon.registry` across all supported games. These registry files use **AES-256-CBC**, a zero IV, and **ISO10126** padding.
+
 ## 📦 Installation
 
 ### Option 1: Download Binary
 
-Check the [Releases](https://www.google.com/search?q=https://github.com/LambdaEd1th/angrybirds-cryptor-cli/releases) page for pre-compiled binaries for your operating system.
+Check the [Releases](https://www.google.com/search?q=https://github.com/LambdaEd1th/angrybirds-fusion-toolkit/releases) page for pre-compiled binaries for your operating system.
 
 ### Option 2: Build from Source
 
@@ -37,20 +39,20 @@ Ensure you have the [Rust toolchain](https://www.rust-lang.org/) installed (Carg
 
 ```bash
 # Clone the repository
-git clone https://github.com/LambdaEd1th/angrybirds-cryptor-cli.git
-cd angrybirds-cryptor-cli
+git clone https://github.com/LambdaEd1th/angrybirds-fusion-toolkit.git
+cd angrybirds-fusion-toolkit
 
 # Build for release
 cargo build --release
 
 ```
 
-The binary will be available at `./target/release/angrybirds-cryptor-cli`.
+The binary will be available at `./target/release/angrybirds-fusion-toolkit`.
 
 ## 🛠 Usage
 
 ```bash
-angrybirds-cryptor-cli <COMMAND> [OPTIONS]
+angrybirds-fusion-toolkit <COMMAND> [OPTIONS]
 
 ```
 
@@ -58,7 +60,8 @@ angrybirds-cryptor-cli <COMMAND> [OPTIONS]
 
 * `encrypt`: Encrypt a raw file back into the game format.
 * `decrypt`: Decrypt an encrypted game file.
-* `init-config`: Generate a default `config.toml` file for customization.
+* `compress`: Compress a single file as `7z` or custom-header `lzma`.
+* `uncompress`: Extract a single file from `7z` or custom-header `lzma`.
 * `help`: Display help information.
 
 ### 🔓 Decrypting Files
@@ -67,7 +70,7 @@ angrybirds-cryptor-cli <COMMAND> [OPTIONS]
 If you don't know the specific game or file category, use the `--auto` flag. The tool will try all known key combinations.
 
 ```bash
-angrybirds-cryptor-cli decrypt --input highscores.lua --auto
+angrybirds-fusion-toolkit decrypt --input highscores.lua --auto
 
 ```
 
@@ -75,7 +78,7 @@ angrybirds-cryptor-cli decrypt --input highscores.lua --auto
 Manually specify the game and file category.
 
 ```bash
-angrybirds-cryptor-cli decrypt \
+angrybirds-fusion-toolkit decrypt \
   --game classic \
   --category native \
   --input levels.lua \
@@ -83,14 +86,12 @@ angrybirds-cryptor-cli decrypt \
 
 ```
 
-**Method 3: Custom Keys**
-Use a specific Hex Key and IV (Initialization Vector).
+Registry files can be decrypted directly with the shared registry selector.
 
 ```bash
-angrybirds-cryptor-cli decrypt \
-  --key "55534361505170413454534e56784d49317639534b39554330795a75416e6232" \
-  --iv "00000000000000000000000000000000" \
-  --input data.enc
+angrybirds-fusion-toolkit decrypt \
+  --registry fusion \
+  --input fusion.registry
 
 ```
 
@@ -99,7 +100,7 @@ angrybirds-cryptor-cli decrypt \
 To encrypt a modified file back to the game format:
 
 ```bash
-angrybirds-cryptor-cli encrypt \
+angrybirds-fusion-toolkit encrypt \
   --game seasons \
   --category save \
   --input settings.lua \
@@ -107,25 +108,61 @@ angrybirds-cryptor-cli encrypt \
 
 ```
 
-### ⚙️ Configuration
+Registry files can be encrypted directly with the shared registry selector.
 
-You can override the built-in keys or add new ones by using a configuration file.
-
-1. Generate a template config:
 ```bash
-angrybirds-cryptor-cli init-config --output my_config.toml
+angrybirds-fusion-toolkit encrypt \
+  --registry fusion \
+  --input fusion.dec \
+  --output fusion.registry
 
 ```
 
+### 📦 Compressing Files
 
-2. Edit `my_config.toml` to add your custom keys.
-3. Run the tool with the `--config` flag:
+Compress a single file to `7z`:
+
 ```bash
-angrybirds-cryptor-cli decrypt --config my_config.toml ...
+angrybirds-fusion-toolkit compress \
+  --format 7z \
+  --input levels.lua \
+  --output levels.lua.7z
 
 ```
 
+Compress a single file to custom-header `lzma`:
 
+```bash
+angrybirds-fusion-toolkit compress \
+  --format lzma \
+  --input levels.lua \
+  --output levels.lua.lzma
+
+```
+
+The custom `lzma` format starts with the 9-byte header `\x89LZMA\r\n\x1A\n`, followed by a standard `.lzma` data stream.
+
+### 📂 Uncompressing Files
+
+Extract a single file from `7z`:
+
+```bash
+angrybirds-fusion-toolkit uncompress \
+  --format 7z \
+  --input levels.lua.7z \
+  --output levels.lua
+
+```
+
+Extract a custom-header `lzma` file:
+
+```bash
+angrybirds-fusion-toolkit uncompress \
+  --format lzma \
+  --input levels.lua.lzma \
+  --output levels.lua
+
+```
 
 ## 📋 Options Reference
 
@@ -135,8 +172,8 @@ angrybirds-cryptor-cli decrypt --config my_config.toml ...
 | `--category` | `-c` | File category (`native`, `save`, `downloaded`). |
 | `--input` | `-i` | Path to the source file. |
 | `--output` | `-o` | (Optional) Path to the destination file. |
-| `--key` |  | 32-byte Key in Hex string format. |
-| `--iv` |  | 16-byte IV in Hex string format. |
+| `--registry` |  | Use the built-in shared registry key: `fusion` or `beacon`. |
+| `--format` | `-f` | Archive format for `compress`/`uncompress`: `7z` or `lzma`. |
 | `--auto` | `-a` | (Decrypt only) Attempt to auto-detect the key. |
 | `--verbose` | `-v` | Enable debug logging. |
 | `--quiet` | `-q` | Suppress non-error output. |

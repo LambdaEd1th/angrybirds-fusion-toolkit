@@ -1,10 +1,14 @@
 [package]
-name = "angrybirds-cryptor-cli"
+name = "angrybirds-fusion-shell"
 version = "0.4.0"
 authors = { workspace = true }
 edition = { workspace = true }
 license = { workspace = true }
-description = "Command-line interface for Angry Birds file cryptor"
+description = "Shell frontend for Angry Birds Fusion Toolkit"
+
+[[bin]]
+name = "angrybirds-fusion-toolkit"
+path = "src/main.rs"
 
 [dependencies]
 clap = { version = "4.5.54", features = ["derive"] }
@@ -12,7 +16,5 @@ anyhow = "1.0.100"
 
 log = { workspace = true }
 env_logger = { workspace = true }
-hex = { workspace = true }
-toml = { workspace = true }
 
-angrybirds-cryptor-core = { path = "../core" }
+angrybirds-fusion-core = { path = "../core" }

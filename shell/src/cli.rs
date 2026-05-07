@@ -1,0 +1,226 @@
+use clap::{Args, Parser, Subcommand};
+use env_logger::Builder;
+use log::LevelFilter;
+use std::path::PathBuf;
+
+#[derive(Parser, Clone, Debug, PartialEq, Eq)]
+#[command(
+    name = "angrybirds-fusion-toolkit",
+    author = "ed1th",
+    version,
+    about = "Angry Birds Fusion Toolkit shell",
+    long_about = "A unified shell executable for Angry Birds Fusion Toolkit operations."
+)]
+pub struct Cli {
+    #[command(subcommand)]
+    pub command: Commands,
+
+    /// Enable verbose logging (Debug level).
+    #[arg(short, long, global = true)]
+    pub verbose: bool,
+
+    /// Suppress all output except errors (Error level).
+    /// Conflicts with --verbose.
+    #[arg(short, long, global = true, conflicts_with = "verbose")]
+    pub quiet: bool,
+}
+
+impl Cli {
+    /// Initializes the logging system based on CLI flags or environment variables.
+    pub fn init_logger(&self) {
+        let mut builder = Builder::from_default_env();
+
+        if self.verbose {
+            // -v: Show Debug information
+            builder.filter_level(LevelFilter::Debug);
+        } else if self.quiet {
+            // -q: Only show Errors, suppress Info
+            builder.filter_level(LevelFilter::Error);
+        } else {
+            // Default: If RUST_LOG env var is not set, default to Info
+            if std::env::var("RUST_LOG").is_err() {
+                builder.filter_level(LevelFilter::Info);
+            }
+        }
+
+        builder.init();
+    }
+}
+
+#[derive(Subcommand, Clone, Debug, PartialEq, Eq)]
+pub enum Commands {
+    Encrypt(EncryptArgs),
+    Decrypt(DecryptArgs),
+    Compress(CompressArgs),
+    Uncompress(UncompressArgs),
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+pub struct EncryptArgs {
+    #[arg(
+        short,
+        long,
+        value_name = "CATEGORY",
+        required_unless_present = "registry"
+    )]
+    pub category: Option<String>,
+
+    #[arg(
+        short,
+        long,
+        value_name = "GAME_NAME",
+        required_unless_present = "registry"
+    )]
+    pub game: Option<String>,
+
+    #[arg(
+        long,
+        value_name = "REGISTRY",
+        value_parser = ["fusion", "beacon"],
+        conflicts_with_all = ["category", "game"]
+    )]
+    pub registry: Option<String>,
+
+    #[arg(short, long, value_name = "INPUT_FILE")]
+    pub input: PathBuf,
+
+    #[arg(short, long, value_name = "OUTPUT_FILE")]
+    pub output: Option<PathBuf>,
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+pub struct DecryptArgs {
+    #[arg(short, long, value_name = "CATEGORY", required_unless_present_any = ["auto", "registry"])]
+    pub category: Option<String>,
+
+    #[arg(short, long, value_name = "GAME_NAME", required_unless_present_any = ["auto", "registry"])]
+    pub game: Option<String>,
+
+    #[arg(
+        long,
+        value_name = "REGISTRY",
+        value_parser = ["fusion", "beacon"],
+        conflicts_with_all = ["category", "game", "auto"]
+    )]
+    pub registry: Option<String>,
+
+    #[arg(short, long, action = clap::ArgAction::SetTrue)]
+    pub auto: bool,
+
+    #[arg(short, long, value_name = "INPUT_FILE")]
+    pub input: PathBuf,
+
+    #[arg(short, long, value_name = "OUTPUT_FILE")]
+    pub output: Option<PathBuf>,
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+pub struct CompressArgs {
+    #[arg(short, long, value_name = "FORMAT")]
+    pub format: String,
+
+    #[arg(short, long, value_name = "INPUT_FILE")]
+    pub input: PathBuf,
+
+    #[arg(short, long, value_name = "OUTPUT_FILE")]
+    pub output: Option<PathBuf>,
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+pub struct UncompressArgs {
+    #[arg(short, long, value_name = "FORMAT")]
+    pub format: String,
+
+    #[arg(short, long, value_name = "INPUT_FILE")]
+    pub input: PathBuf,
+
+    #[arg(short, long, value_name = "OUTPUT_FILE")]
+    pub output: Option<PathBuf>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn encrypt_accepts_registry_without_game_or_category() {
+        let cli = Cli::try_parse_from([
+            "angrybirds-fusion-toolkit",
+            "encrypt",
+            "--registry",
+            "fusion",
+            "--input",
+            "fusion.dec",
+        ])
+        .expect("registry encrypt arguments should parse");
+
+        match cli.command {
+            Commands::Encrypt(args) => {
+                assert_eq!(args.registry.as_deref(), Some("fusion"));
+                assert_eq!(args.game, None);
+                assert_eq!(args.category, None);
+            }
+            other => panic!("expected encrypt command, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn encrypt_registry_conflicts_with_game_category_mode() {
+        let result = Cli::try_parse_from([
+            "angrybirds-fusion-toolkit",
+            "encrypt",
+            "--registry",
+            "fusion",
+            "--category",
+            "native",
+            "--input",
+            "fusion.dec",
+        ]);
+
+        assert!(
+            result.is_err(),
+            "registry mode should conflict with game/category mode"
+        );
+    }
+
+    #[test]
+    fn decrypt_accepts_registry_without_game_or_category() {
+        let cli = Cli::try_parse_from([
+            "angrybirds-fusion-toolkit",
+            "decrypt",
+            "--registry",
+            "fusion",
+            "--input",
+            "fusion.registry",
+        ])
+        .expect("registry decrypt arguments should parse");
+
+        match cli.command {
+            Commands::Decrypt(args) => {
+                assert_eq!(args.registry.as_deref(), Some("fusion"));
+                assert_eq!(args.game, None);
+                assert_eq!(args.category, None);
+            }
+            other => panic!("expected decrypt command, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn decrypt_registry_conflicts_with_game_category_mode() {
+        let result = Cli::try_parse_from([
+            "angrybirds-fusion-toolkit",
+            "decrypt",
+            "--registry",
+            "fusion",
+            "--game",
+            "classic",
+            "--input",
+            "fusion.registry",
+        ]);
+
+        assert!(
+            result.is_err(),
+            "registry mode should conflict with game/category mode"
+        );
+    }
+}

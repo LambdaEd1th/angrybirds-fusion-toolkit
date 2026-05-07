@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ==============================================================================
-# Angry Birds Cryptor CLI - Interactive Wrapper Script
+# Angry Birds Fusion Toolkit - Interactive Wrapper Script
 # File: scripts/batch.sh
 #
 # This script is designed to be placed in the "scripts/" directory.
@@ -9,7 +9,7 @@
 # ==============================================================================
 
 # Define the binary name
-BIN_NAME="angrybirds-cryptor-cli"
+BIN_NAME="angrybirds-fusion-toolkit"
 
 # Attempt to find the executable in the following order:
 # 1. Current directory (if moved here or inside release folder)
@@ -26,26 +26,19 @@ else
 fi
 
 echo "=========================================="
-echo "   Angry Birds Cryptor - Interactive Tool"
+echo "   Angry Birds Fusion Toolkit"
 echo "=========================================="
 echo "Please select an operation mode:"
 echo "1) Decrypt (Game File -> Readable)"
 echo "2) Encrypt (Readable -> Game File)"
-echo "3) Init Config (Generate config.toml)"
 echo "=========================================="
-read -p "Enter number (1-3): " MODE_CHOICE
+read -p "Enter number (1-2): " MODE_CHOICE
 
 USE_AUTO=false
 
 case $MODE_CHOICE in
     1) CMD="decrypt";;
     2) CMD="encrypt";;
-    3)
-        echo "Generating default config file..."
-        $TOOL init-config
-        echo "config.toml generated successfully."
-        exit 0
-        ;;
     *)
         echo "Invalid choice. Exiting."
         exit 1
