@@ -9,9 +9,9 @@ description = "Core library for Angry Birds Fusion Toolkit"
 [dependencies]
 aes = "0.9"
 cbc = { version = "0.2", features = ["alloc"] }
-thiserror = "2.0.18"
+thiserror = "2"
 log = { workspace = true }
 
 # Compression support
-sevenz-rust2 = "0.21.0"
-lzma-rust2 = "0.16.2"
+sevenz-rust2 = "0.21"
+lzma-rust2 = "0.16"
