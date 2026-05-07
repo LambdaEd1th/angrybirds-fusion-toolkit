@@ -102,27 +102,10 @@ jobs:
           if [ -f "README.md" ]; then cp "README.md" "$RELEASE_NAME/"; fi
           if [ -f "LICENSE" ]; then cp "LICENSE" "$RELEASE_NAME/"; fi
 
-          # 5. Copy platform-specific scripts (New Section)
-          # Logic: Check the OS runner type to decide which script to include
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-              # Windows: Include PowerShell script
-              if [ -f "scripts/batch.ps1" ]; then 
-                  cp "scripts/batch.ps1" "$RELEASE_NAME/"
-                  echo "Included scripts/batch.ps1 for Windows"
-              fi
-          else
-              # Linux/macOS: Include Shell script and make executable
-              if [ -f "scripts/batch.sh" ]; then 
-                  cp "scripts/batch.sh" "$RELEASE_NAME/"
-                  chmod +x "$RELEASE_NAME/batch.sh"
-                  echo "Included scripts/batch.sh for Unix"
-              fi
-          fi
-
-          # 6. Create the .tar.gz archive
+            # 5. Create the .tar.gz archive
           tar -czvf "$ARCHIVE_NAME" "$RELEASE_NAME"
 
-          # 7. Set the output for the next step
+            # 6. Set the output for the next step
           echo "asset_path=$ARCHIVE_NAME" >> $GITHUB_OUTPUT
 
       - name: Upload Release Asset

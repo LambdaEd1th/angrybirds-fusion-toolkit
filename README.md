@@ -180,7 +180,7 @@ angrybirds-fusion-toolkit uncompress \
 
 ## ⚖️ License
 
-This project is open-source software licensed under the **GNU General Public License v3.0**.
+This project is open-source software licensed under the **GNU Affero General Public License v3.0 or later**.
 
 ## ⚠️ Disclaimer
 
