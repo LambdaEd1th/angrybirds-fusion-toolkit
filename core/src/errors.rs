@@ -20,4 +20,13 @@ pub enum CryptorError {
 
     #[error("Archive Error: {0}")]
     ArchiveError(String),
+
+    #[error("Image Error: {0}")]
+    ImageError(#[from] image::ImageError),
+
+    #[error("Manifest Error: {0}")]
+    ManifestError(String),
+
+    #[error("Format Error: {0}")]
+    FormatError(String),
 }

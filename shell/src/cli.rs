@@ -53,6 +53,8 @@ pub enum Commands {
     Decrypt(DecryptArgs),
     Compress(CompressArgs),
     Uncompress(UncompressArgs),
+    ZstreamToPng(ZstreamToPngArgs),
+    PngToZstream(PngToZstreamArgs),
 }
 
 #[derive(Args, Clone, Debug, PartialEq, Eq)]
@@ -132,6 +134,24 @@ pub struct UncompressArgs {
     pub format: String,
 
     #[arg(short, long, value_name = "INPUT_FILE")]
+    pub input: PathBuf,
+
+    #[arg(short, long, value_name = "OUTPUT_FILE")]
+    pub output: Option<PathBuf>,
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+pub struct ZstreamToPngArgs {
+    #[arg(short, long, value_name = "INPUT_FILE")]
+    pub input: PathBuf,
+
+    #[arg(short, long, value_name = "OUTPUT_DIR")]
+    pub output: Option<PathBuf>,
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+pub struct PngToZstreamArgs {
+    #[arg(short, long, value_name = "INPUT_DIR_OR_MANIFEST")]
     pub input: PathBuf,
 
     #[arg(short, long, value_name = "OUTPUT_FILE")]
@@ -222,5 +242,47 @@ mod tests {
             result.is_err(),
             "registry mode should conflict with game/category mode"
         );
+    }
+
+    #[test]
+    fn zstream_to_png_arguments_parse() {
+        let cli = Cli::try_parse_from([
+            "angrybirds-fusion-toolkit",
+            "zstream-to-png",
+            "--input",
+            "sprites.zstream",
+            "--output",
+            "sprites_png",
+        ])
+        .expect("zstream-to-png arguments should parse");
+
+        match cli.command {
+            Commands::ZstreamToPng(args) => {
+                assert_eq!(args.input, PathBuf::from("sprites.zstream"));
+                assert_eq!(args.output, Some(PathBuf::from("sprites_png")));
+            }
+            other => panic!("expected zstream-to-png command, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn png_to_zstream_arguments_parse() {
+        let cli = Cli::try_parse_from([
+            "angrybirds-fusion-toolkit",
+            "png-to-zstream",
+            "--input",
+            "sprites_png",
+            "--output",
+            "sprites.zstream",
+        ])
+        .expect("png-to-zstream arguments should parse");
+
+        match cli.command {
+            Commands::PngToZstream(args) => {
+                assert_eq!(args.input, PathBuf::from("sprites_png"));
+                assert_eq!(args.output, Some(PathBuf::from("sprites.zstream")));
+            }
+            other => panic!("expected png-to-zstream command, got {other:?}"),
+        }
     }
 }

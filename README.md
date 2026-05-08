@@ -62,6 +62,8 @@ angrybirds-fusion-toolkit <COMMAND> [OPTIONS]
 * `decrypt`: Decrypt an encrypted game file.
 * `compress`: Compress a single file as `7z` or custom-header `lzma`.
 * `uncompress`: Extract a single file from `7z` or custom-header `lzma`.
+* `zstream-to-png`: Export a `.zstream` file as PNG images plus a manifest.
+* `png-to-zstream`: Rebuild a `.zstream` file from exported PNG images and the manifest.
 * `help`: Display help information.
 
 ### 🔓 Decrypting Files
@@ -164,6 +166,28 @@ angrybirds-fusion-toolkit uncompress \
 
 ```
 
+### 🖼 Converting Zstream Files
+
+Export a `.zstream` file into a directory of PNG files plus a `manifest.toml` that preserves the per-entry header fields needed for a lossless rebuild:
+
+```bash
+angrybirds-fusion-toolkit zstream-to-png \
+  --input INGAME_BIRDS_1.zstream \
+  --output INGAME_BIRDS_1_png
+
+```
+
+Rebuild the `.zstream` file from the exported PNG directory (or directly from its `manifest.toml`):
+
+```bash
+angrybirds-fusion-toolkit png-to-zstream \
+  --input INGAME_BIRDS_1_png \
+  --output INGAME_BIRDS_1_rebuilt.zstream
+
+```
+
+The current implementation is tested on the observed on-disk formats used by this build: `RGBA8888` and `RGBA4444`. `RGBA8888_big` now shares the same raw pixel codec path as `RGBA8888`, but rebuilding it as an on-disk zstream entry still requires a verified header encoding for format tags longer than the observed 8-byte field. The manifest preserves atlas, border, and extrude metadata so the zstream file can be rebuilt losslessly for the verified on-disk formats.
+
 ## 📋 Options Reference
 
 | Option | Short | Description |
@@ -175,6 +199,8 @@ angrybirds-fusion-toolkit uncompress \
 | `--registry` |  | Use the built-in shared registry key: `fusion` or `beacon`. |
 | `--format` | `-f` | Archive format for `compress`/`uncompress`: `7z` or `lzma`. |
 | `--auto` | `-a` | (Decrypt only) Attempt to auto-detect the key. |
+| `--input` | `-i` | For `zstream-to-png`, the source `.zstream`; for `png-to-zstream`, the export directory or `manifest.json`. |
+| `--output` | `-o` | For `zstream-to-png`, the PNG export directory; for `png-to-zstream`, the rebuilt `.zstream` path. |
 | `--verbose` | `-v` | Enable debug logging. |
 | `--quiet` | `-q` | Suppress non-error output. |
 
