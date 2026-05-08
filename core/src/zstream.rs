@@ -181,7 +181,10 @@ pub fn pngs_to_zstream(
         ));
     }
 
-    if let Some(parent) = output_path.parent().filter(|path| !path.as_os_str().is_empty()) {
+    if let Some(parent) = output_path
+        .parent()
+        .filter(|path| !path.as_os_str().is_empty())
+    {
         fs::create_dir_all(parent)?;
     }
 
@@ -244,7 +247,8 @@ fn parse_zstream(data: &[u8]) -> Result<Vec<ZstreamEntry>, CryptorError> {
         }
 
         let total_size = u32::from_be_bytes(data[offset..offset + 4].try_into().unwrap()) as usize;
-        let header_size = u16::from_be_bytes(data[offset + 4..offset + 6].try_into().unwrap()) as usize;
+        let header_size =
+            u16::from_be_bytes(data[offset + 4..offset + 6].try_into().unwrap()) as usize;
 
         if header_size != ZSTREAM_HEADER_SIZE {
             return Err(CryptorError::FormatError(format!(
@@ -263,7 +267,8 @@ fn parse_zstream(data: &[u8]) -> Result<Vec<ZstreamEntry>, CryptorError> {
         let pixel_format = parse_format_string(&data[offset + 0x20..offset + 0x28])?;
         let format = PixelFormat::parse(&pixel_format)?;
         let payload = data[offset + ZSTREAM_HEADER_SIZE..offset + total_size].to_vec();
-        let expected_len = usize::from(stream_width) * usize::from(stream_height) * format.bytes_per_pixel();
+        let expected_len =
+            usize::from(stream_width) * usize::from(stream_height) * format.bytes_per_pixel();
 
         if payload.len() != expected_len {
             return Err(CryptorError::FormatError(format!(
@@ -348,7 +353,10 @@ fn write_entry(
 }
 
 fn parse_format_string(bytes: &[u8]) -> Result<String, CryptorError> {
-    let end = bytes.iter().position(|byte| *byte == 0).unwrap_or(bytes.len());
+    let end = bytes
+        .iter()
+        .position(|byte| *byte == 0)
+        .unwrap_or(bytes.len());
     let value = std::str::from_utf8(&bytes[..end]).map_err(|err| {
         CryptorError::FormatError(format!("Invalid pixel format string in header: {err}"))
     })?;
@@ -396,7 +404,7 @@ fn read_u16_be(data: &[u8], offset: usize) -> u16 {
 }
 
 fn ensure_rgba_buffer_len(rgba: &[u8]) -> Result<(), CryptorError> {
-    if rgba.len() % 4 == 0 {
+    if rgba.len().is_multiple_of(4) {
         Ok(())
     } else {
         Err(CryptorError::FormatError(format!(
@@ -407,7 +415,7 @@ fn ensure_rgba_buffer_len(rgba: &[u8]) -> Result<(), CryptorError> {
 }
 
 fn decode_rgba4444(payload: &[u8], endianness: Endianness) -> Result<Vec<u8>, CryptorError> {
-    if payload.len() % 2 != 0 {
+    if !payload.len().is_multiple_of(2) {
         return Err(CryptorError::FormatError(
             "RGBA4444 payload length is not aligned to 2 bytes".to_string(),
         ));
@@ -449,7 +457,7 @@ fn encode_rgba4444(rgba: &[u8], endianness: Endianness) -> Result<Vec<u8>, Crypt
 }
 
 fn decode_rgb565(payload: &[u8], endianness: Endianness) -> Result<Vec<u8>, CryptorError> {
-    if payload.len() % 2 != 0 {
+    if !payload.len().is_multiple_of(2) {
         return Err(CryptorError::FormatError(
             "RGB565 payload length is not aligned to 2 bytes".to_string(),
         ));
@@ -490,7 +498,7 @@ fn encode_rgb565(rgba: &[u8], endianness: Endianness) -> Result<Vec<u8>, Cryptor
 }
 
 fn decode_rgba5551(payload: &[u8], endianness: Endianness) -> Result<Vec<u8>, CryptorError> {
-    if payload.len() % 2 != 0 {
+    if !payload.len().is_multiple_of(2) {
         return Err(CryptorError::FormatError(
             "RGBA5551 payload length is not aligned to 2 bytes".to_string(),
         ));
@@ -557,8 +565,8 @@ mod tests {
         let original = build_test_zstream();
         fs::write(&input_path, &original).expect("test zstream should be written");
 
-        let manifest_path = zstream_to_pngs(&input_path, &export_dir)
-            .expect("zstream export should succeed");
+        let manifest_path =
+            zstream_to_pngs(&input_path, &export_dir).expect("zstream export should succeed");
         assert_eq!(manifest_path, export_dir.join(MANIFEST_FILE_NAME));
 
         pngs_to_zstream(&export_dir, &rebuilt_path).expect("zstream rebuild should succeed");
@@ -579,8 +587,8 @@ mod tests {
         let original = build_test_zstream();
         fs::write(&input_path, &original).expect("test zstream should be written");
 
-        let manifest_path = zstream_to_pngs(&input_path, &export_dir)
-            .expect("zstream export should succeed");
+        let manifest_path =
+            zstream_to_pngs(&input_path, &export_dir).expect("zstream export should succeed");
         pngs_to_zstream(&manifest_path, &rebuilt_path).expect("manifest rebuild should succeed");
 
         let rebuilt = fs::read(&rebuilt_path).expect("rebuilt zstream should be readable");

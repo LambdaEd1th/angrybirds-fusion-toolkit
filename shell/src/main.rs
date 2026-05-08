@@ -199,10 +199,10 @@ fn generate_zstream_output_path(path: &Path) -> PathBuf {
         return path.with_extension("zstream");
     }
 
-    if path.file_name() == Some(std::ffi::OsStr::new("manifest.toml")) {
-        if let Some(parent) = path.parent() {
-            return parent.with_extension("zstream");
-        }
+    if path.file_name() == Some(std::ffi::OsStr::new("manifest.toml"))
+        && let Some(parent) = path.parent()
+    {
+        return parent.with_extension("zstream");
     }
 
     path.with_extension("zstream")
