@@ -27,6 +27,9 @@ pub enum CryptorError {
     #[error("Manifest Error: {0}")]
     ManifestError(String),
 
+    #[error("TOML Error: {0}")]
+    TomlError(String),
+
     #[error("Format Error: {0}")]
     FormatError(String),
 }

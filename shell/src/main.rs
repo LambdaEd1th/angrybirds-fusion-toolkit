@@ -7,7 +7,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use angrybirds_fusion_core::{ArchiveFormat, compress, crypto, pngs_to_zstream, zstream_to_pngs};
+use angrybirds_fusion_core::{
+    ArchiveFormat, compress, crypto, dat_to_toml, pngs_to_zstream, toml_to_dat, zstream_to_pngs,
+};
 mod cli;
 
 fn main() -> Result<()> {
@@ -19,6 +21,8 @@ fn main() -> Result<()> {
         cli::Commands::Decrypt(cmd_args) => handle_decrypt(cmd_args),
         cli::Commands::Compress(cmd_args) => handle_compress(cmd_args),
         cli::Commands::Uncompress(cmd_args) => handle_uncompress(cmd_args),
+        cli::Commands::DatToToml(cmd_args) => handle_dat_to_toml(cmd_args),
+        cli::Commands::TomlToDat(cmd_args) => handle_toml_to_dat(cmd_args),
         cli::Commands::ZstreamToPng(cmd_args) => handle_zstream_to_png(cmd_args),
         cli::Commands::PngToZstream(cmd_args) => handle_png_to_zstream(cmd_args),
     }?;
@@ -103,6 +107,30 @@ fn handle_uncompress(args: cli::UncompressArgs) -> Result<()> {
     Ok(())
 }
 
+fn handle_dat_to_toml(args: cli::DatToTomlArgs) -> Result<()> {
+    info!("Mode: DAT to TOML");
+
+    let output = args
+        .output
+        .unwrap_or_else(|| generate_changed_extension_path(&args.input, "toml"));
+
+    dat_to_toml(&args.input, &output)?;
+    info!("Successfully wrote TOML to {:?}", output);
+    Ok(())
+}
+
+fn handle_toml_to_dat(args: cli::TomlToDatArgs) -> Result<()> {
+    info!("Mode: TOML to DAT");
+
+    let output = args
+        .output
+        .unwrap_or_else(|| generate_changed_extension_path(&args.input, "dat"));
+
+    toml_to_dat(&args.input, &output)?;
+    info!("Successfully wrote DAT to {:?}", output);
+    Ok(())
+}
+
 fn handle_zstream_to_png(args: cli::ZstreamToPngArgs) -> Result<()> {
     info!("Mode: Zstream to PNG");
 
@@ -175,6 +203,10 @@ fn generate_suffixed_path(path: &Path, suffix: &str) -> PathBuf {
 fn generate_archive_output_path(path: &Path, format: ArchiveFormat) -> PathBuf {
     let file_name = path.file_name().unwrap_or_default().to_string_lossy();
     path.with_file_name(format!("{}.{}", file_name, format.extension()))
+}
+
+fn generate_changed_extension_path(path: &Path, extension: &str) -> PathBuf {
+    path.with_extension(extension)
 }
 
 fn generate_uncompressed_output_path(path: &Path) -> PathBuf {

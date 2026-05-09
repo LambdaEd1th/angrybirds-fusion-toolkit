@@ -53,6 +53,8 @@ pub enum Commands {
     Decrypt(DecryptArgs),
     Compress(CompressArgs),
     Uncompress(UncompressArgs),
+    DatToToml(DatToTomlArgs),
+    TomlToDat(TomlToDatArgs),
     ZstreamToPng(ZstreamToPngArgs),
     PngToZstream(PngToZstreamArgs),
 }
@@ -133,6 +135,24 @@ pub struct UncompressArgs {
     #[arg(short, long, value_name = "FORMAT")]
     pub format: String,
 
+    #[arg(short, long, value_name = "INPUT_FILE")]
+    pub input: PathBuf,
+
+    #[arg(short, long, value_name = "OUTPUT_FILE")]
+    pub output: Option<PathBuf>,
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+pub struct DatToTomlArgs {
+    #[arg(short, long, value_name = "INPUT_FILE")]
+    pub input: PathBuf,
+
+    #[arg(short, long, value_name = "OUTPUT_FILE")]
+    pub output: Option<PathBuf>,
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+pub struct TomlToDatArgs {
     #[arg(short, long, value_name = "INPUT_FILE")]
     pub input: PathBuf,
 
@@ -262,6 +282,48 @@ mod tests {
                 assert_eq!(args.output, Some(PathBuf::from("sprites_png")));
             }
             other => panic!("expected zstream-to-png command, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn dat_to_toml_arguments_parse() {
+        let cli = Cli::try_parse_from([
+            "angrybirds-fusion-toolkit",
+            "dat-to-toml",
+            "--input",
+            "TEXTS.dat",
+            "--output",
+            "TEXTS.toml",
+        ])
+        .expect("dat-to-toml arguments should parse");
+
+        match cli.command {
+            Commands::DatToToml(args) => {
+                assert_eq!(args.input, PathBuf::from("TEXTS.dat"));
+                assert_eq!(args.output, Some(PathBuf::from("TEXTS.toml")));
+            }
+            other => panic!("expected dat-to-toml command, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn toml_to_dat_arguments_parse() {
+        let cli = Cli::try_parse_from([
+            "angrybirds-fusion-toolkit",
+            "toml-to-dat",
+            "--input",
+            "TEXTS.toml",
+            "--output",
+            "TEXTS.dat",
+        ])
+        .expect("toml-to-dat arguments should parse");
+
+        match cli.command {
+            Commands::TomlToDat(args) => {
+                assert_eq!(args.input, PathBuf::from("TEXTS.toml"));
+                assert_eq!(args.output, Some(PathBuf::from("TEXTS.dat")));
+            }
+            other => panic!("expected toml-to-dat command, got {other:?}"),
         }
     }
 
