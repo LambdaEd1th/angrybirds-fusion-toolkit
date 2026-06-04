@@ -10,6 +10,7 @@ This tool is designed for modders, researchers, and enthusiasts who wish to anal
 * **Auto-Detection**: The `decrypt` command can automatically brute-force through known keys to identify the correct game and file category.
 * **Multiple File Categories**: Supports `native` (game data), `save` (progress files), `downloaded` (DLC), `fusion.registry`, and `beacon.registry`.
 * **Built-in Keys**: Includes built-in keys for supported games and shared registry files.
+* **Lua Bytecode Decompile**: Integrates `unluac v1.2.5` to turn decrypted `.luac` / `.out` bytecode into readable Lua source.
 * **Cross-Platform**: Compiles for **Windows**, **Linux**, and **macOS** (both Intel and Apple Silicon).
 
 ## 🎮 Supported Games
@@ -60,6 +61,7 @@ angrybirds-fusion-toolkit <COMMAND> [OPTIONS]
 
 * `encrypt`: Encrypt a raw file back into the game format.
 * `decrypt`: Decrypt an encrypted game file.
+* `decompile-luac`: Decompile Lua bytecode into readable Lua source.
 * `compress`: Compress a single file as `7z` or custom-header `lzma`.
 * `uncompress`: Extract a single file from `7z` or custom-header `lzma`.
 * `zstream-to-png`: Export a `.zstream` file as PNG images plus a manifest.
@@ -96,6 +98,37 @@ angrybirds-fusion-toolkit decrypt \
   --input fusion.registry
 
 ```
+
+### 📜 Decompiling Lua Bytecode
+
+After decrypting a script chunk, you can feed the raw bytecode directly into the built-in `unluac` pipeline:
+
+```bash
+angrybirds-fusion-toolkit decompile-luac \
+  --input GameHud.luac \
+  --output GameHud.lua
+
+```
+
+The command defaults to `lua5.1`, which matches the Lua bytecode used by the Angry Birds Fusion-engine titles in this repository. It also defaults to `permissive` generation mode so `unluac` can emit partial-but-usable output for chunks that contain control-flow patterns Lua 5.1 source cannot represent perfectly.
+For bytecode string payloads, the toolkit now defaults the `unluac` parser to the `latin1` label exposed by `encoding_rs` / `unluac`, which resolves through the Encoding Standard compatibility mapping to the single-byte Western decoder used for these chunks.
+Based on the current full-batch results for `luac-collection`, the shell command now fixes that profile internally instead of exposing extra decompile toggles. This fixed profile was chosen from the best-performing settings on the current corpus, excluding the remaining `123` known failing chunks that still require upstream `unluac` fixes.
+
+Current internal `unluac` settings used by `decompile-luac`:
+
+* `dialect = lua5.1`
+* `parse.mode = permissive`
+* `parse.string_encoding = latin1`
+* `parse.string_decode_mode = strict`
+* `target_stage = generate`
+* `generate.mode = permissive`
+* `naming.mode = debug-like` (`unluac` library default)
+* `generate.indent_width = 4`
+* `generate.max_line_length = 100`
+* `generate.quote_style = min-escape`
+* `generate.table_style = balanced`
+* `generate.conservative_output = true`
+* `generate.comment = true`
 
 ### 🔒 Encrypting Files
 

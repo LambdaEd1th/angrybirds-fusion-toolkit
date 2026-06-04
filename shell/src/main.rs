@@ -8,7 +8,8 @@ use std::{
 };
 
 use angrybirds_fusion_core::{
-    ArchiveFormat, compress, crypto, dat_to_toml, pngs_to_zstream, toml_to_dat, zstream_to_pngs,
+    ArchiveFormat, LuacDecompileOptions, compress, crypto, dat_to_toml, decompile_luac,
+    pngs_to_zstream, toml_to_dat, zstream_to_pngs,
 };
 mod cli;
 
@@ -19,6 +20,7 @@ fn main() -> Result<()> {
     match cli.command {
         cli::Commands::Encrypt(cmd_args) => handle_encrypt(cmd_args),
         cli::Commands::Decrypt(cmd_args) => handle_decrypt(cmd_args),
+        cli::Commands::DecompileLuac(cmd_args) => handle_decompile_luac(cmd_args),
         cli::Commands::Compress(cmd_args) => handle_compress(cmd_args),
         cli::Commands::Uncompress(cmd_args) => handle_uncompress(cmd_args),
         cli::Commands::DatToToml(cmd_args) => handle_dat_to_toml(cmd_args),
@@ -79,6 +81,26 @@ fn handle_decrypt(args: cli::DecryptArgs) -> Result<()> {
             Ok(cryptor.decrypt(data)?)
         }
     })
+}
+
+fn handle_decompile_luac(args: cli::DecompileLuacArgs) -> Result<()> {
+    info!("Mode: Decompile luac");
+
+    if args.input.is_dir() {
+        return Err(anyhow!("Directory processing disabled"));
+    }
+    if !args.input.exists() {
+        return Err(anyhow!("Input file not found"));
+    }
+
+    let source = decompile_luac(&fs::read(&args.input)?, LuacDecompileOptions::default())?;
+    let output = args
+        .output
+        .unwrap_or_else(|| generate_decompiled_lua_output_path(&args.input));
+
+    write_output(&output, source.as_bytes())?;
+    info!("Successfully wrote decompiled Lua to {:?}", output);
+    Ok(())
 }
 
 fn handle_compress(args: cli::CompressArgs) -> Result<()> {
@@ -182,7 +204,18 @@ where
 
 fn save_output(input: &Path, output: Option<PathBuf>, suffix: &str, data: &[u8]) -> Result<()> {
     let out = output.unwrap_or_else(|| generate_suffixed_path(input, suffix));
-    File::create(out)?.write_all(data)?;
+    write_output(&out, data)?;
+    Ok(())
+}
+
+fn write_output(path: &Path, data: &[u8]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        fs::create_dir_all(parent)?;
+    }
+    File::create(path)?.write_all(data)?;
     Ok(())
 }
 
@@ -203,6 +236,24 @@ fn generate_suffixed_path(path: &Path, suffix: &str) -> PathBuf {
 fn generate_archive_output_path(path: &Path, format: ArchiveFormat) -> PathBuf {
     let file_name = path.file_name().unwrap_or_default().to_string_lossy();
     path.with_file_name(format!("{}.{}", file_name, format.extension()))
+}
+
+fn generate_decompiled_lua_output_path(path: &Path) -> PathBuf {
+    match path.extension().and_then(|ext| ext.to_str()) {
+        Some(ext) if ext.eq_ignore_ascii_case("luac") || ext.eq_ignore_ascii_case("out") => {
+            path.with_extension("lua")
+        }
+        Some(ext) if ext.eq_ignore_ascii_case("lua") => generate_suffixed_path(path, "_decompiled"),
+        _ => {
+            let stem = path.file_stem().unwrap_or_default().to_string_lossy();
+            let file_name = if stem.is_empty() {
+                "decompiled.lua".to_string()
+            } else {
+                format!("{}_decompiled.lua", stem)
+            };
+            path.with_file_name(file_name)
+        }
+    }
 }
 
 fn generate_changed_extension_path(path: &Path, extension: &str) -> PathBuf {
@@ -238,4 +289,27 @@ fn generate_zstream_output_path(path: &Path) -> PathBuf {
     }
 
     path.with_extension("zstream")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn decompiled_lua_output_replaces_luac_extension() {
+        let output = generate_decompiled_lua_output_path(Path::new("GameHud.luac"));
+        assert_eq!(output, PathBuf::from("GameHud.lua"));
+    }
+
+    #[test]
+    fn decompiled_lua_output_suffixes_existing_lua_extension() {
+        let output = generate_decompiled_lua_output_path(Path::new("GameHud.lua"));
+        assert_eq!(output, PathBuf::from("GameHud_decompiled.lua"));
+    }
+
+    #[test]
+    fn decompiled_lua_output_suffixes_unknown_extensions() {
+        let output = generate_decompiled_lua_output_path(Path::new("GameHud.bin"));
+        assert_eq!(output, PathBuf::from("GameHud_decompiled.lua"));
+    }
 }

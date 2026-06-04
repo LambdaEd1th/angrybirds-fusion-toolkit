@@ -32,4 +32,10 @@ pub enum CryptorError {
 
     #[error("Format Error: {0}")]
     FormatError(String),
+
+    #[error("Lua bytecode decompile failed: {0}")]
+    LuacDecompileError(String),
+
+    #[error("Lua bytecode decompile panicked: {0}")]
+    LuacDecompilePanic(String),
 }

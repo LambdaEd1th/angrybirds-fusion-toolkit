@@ -3,6 +3,7 @@ pub mod constants;
 pub mod crypto;
 pub mod dat;
 pub mod errors;
+pub mod luac;
 pub mod zstream;
 
 pub use compress::{ArchiveFormat, compress_file, uncompress_file};
@@ -15,4 +16,5 @@ pub use dat::{
     dat_to_toml, parse_dat, toml_to_dat,
 };
 pub use errors::CryptorError;
+pub use luac::{LuacDecompileOptions, LuacDialect, LuacGenerateMode, decompile_luac};
 pub use zstream::{ZstreamManifest, ZstreamManifestEntry, pngs_to_zstream, zstream_to_pngs};

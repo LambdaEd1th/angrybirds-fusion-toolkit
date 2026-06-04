@@ -51,6 +51,7 @@ impl Cli {
 pub enum Commands {
     Encrypt(EncryptArgs),
     Decrypt(DecryptArgs),
+    DecompileLuac(DecompileLuacArgs),
     Compress(CompressArgs),
     Uncompress(UncompressArgs),
     DatToToml(DatToTomlArgs),
@@ -111,6 +112,15 @@ pub struct DecryptArgs {
     #[arg(short, long, action = clap::ArgAction::SetTrue)]
     pub auto: bool,
 
+    #[arg(short, long, value_name = "INPUT_FILE")]
+    pub input: PathBuf,
+
+    #[arg(short, long, value_name = "OUTPUT_FILE")]
+    pub output: Option<PathBuf>,
+}
+
+#[derive(Args, Clone, Debug, PartialEq, Eq)]
+pub struct DecompileLuacArgs {
     #[arg(short, long, value_name = "INPUT_FILE")]
     pub input: PathBuf,
 
@@ -262,6 +272,27 @@ mod tests {
             result.is_err(),
             "registry mode should conflict with game/category mode"
         );
+    }
+
+    #[test]
+    fn decompile_luac_arguments_parse() {
+        let cli = Cli::try_parse_from([
+            "angrybirds-fusion-toolkit",
+            "decompile-luac",
+            "--input",
+            "GameHud.luac",
+            "--output",
+            "GameHud.lua",
+        ])
+        .expect("decompile-luac arguments should parse");
+
+        match cli.command {
+            Commands::DecompileLuac(args) => {
+                assert_eq!(args.input, PathBuf::from("GameHud.luac"));
+                assert_eq!(args.output, Some(PathBuf::from("GameHud.lua")));
+            }
+            other => panic!("expected decompile-luac command, got {other:?}"),
+        }
     }
 
     #[test]
