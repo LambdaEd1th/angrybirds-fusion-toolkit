@@ -77,16 +77,15 @@ fn panic_payload_message(payload: &(dyn Any + Send)) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
+    use std::io::ErrorKind;
+    use std::path::Path;
 
-    const LANG_CHUNK: &[u8] = include_bytes!(
-        "../../../luac-collection/com.rovio.angrybirdsrio.app/data/scripts/lang.lua"
-    );
-    const FRIENDS_MULTI_FONT_TEXT_CHUNK: &[u8] = include_bytes!(
-        "../../../luac-collection/com.rovio.angrybirdsfriends.app/data/scripts/ui/MultiFontText.lua"
-    );
-    const STARWARS_GROUPS_CHUNK: &[u8] = include_bytes!(
-        "../../../luac-collection/com.rovio.angrybirdsstarwars.app/data/scripts/groups.lua"
-    );
+    const LANG_CHUNK_PATH: &str = "com.rovio.angrybirdsrio.app/data/scripts/lang.lua";
+    const FRIENDS_MULTI_FONT_TEXT_CHUNK_PATH: &str =
+        "com.rovio.angrybirdsfriends.app/data/scripts/ui/MultiFontText.lua";
+    const STARWARS_GROUPS_CHUNK_PATH: &str =
+        "com.rovio.angrybirdsstarwars.app/data/scripts/groups.lua";
 
     #[test]
     fn default_options_target_lua51_permissive_generation() {
@@ -103,8 +102,12 @@ mod tests {
 
     #[test]
     fn known_lua51_chunk_decompiles_to_source() {
+        let Some(chunk) = read_luac_collection_fixture(LANG_CHUNK_PATH) else {
+            return;
+        };
+
         let source =
-            decompile_luac(LANG_CHUNK, LuacDecompileOptions::default()).expect("should decompile");
+            decompile_luac(&chunk, LuacDecompileOptions::default()).expect("should decompile");
 
         assert!(
             source.contains("function") || source.contains("local") || source.contains("return"),
@@ -114,7 +117,11 @@ mod tests {
 
     #[test]
     fn starwars_groups_chunk_decompiles_with_latin1_default() {
-        let source = decompile_luac(STARWARS_GROUPS_CHUNK, LuacDecompileOptions::default())
+        let Some(chunk) = read_luac_collection_fixture(STARWARS_GROUPS_CHUNK_PATH) else {
+            return;
+        };
+
+        let source = decompile_luac(&chunk, LuacDecompileOptions::default())
             .expect("latin1 default should decode starwars groups chunk");
 
         assert!(source.contains("scoreObjects"));
@@ -123,11 +130,12 @@ mod tests {
 
     #[test]
     fn friends_multi_font_text_chunk_decompiles_with_latin1_default() {
-        let source = decompile_luac(
-            FRIENDS_MULTI_FONT_TEXT_CHUNK,
-            LuacDecompileOptions::default(),
-        )
-        .expect("latin1 default should decode multi-font text chunk");
+        let Some(chunk) = read_luac_collection_fixture(FRIENDS_MULTI_FONT_TEXT_CHUNK_PATH) else {
+            return;
+        };
+
+        let source = decompile_luac(&chunk, LuacDecompileOptions::default())
+            .expect("latin1 default should decode multi-font text chunk");
 
         assert!(source.contains("lineText"));
         assert!(source.contains("string"));
@@ -138,5 +146,31 @@ mod tests {
         let payload: Box<dyn Any + Send> = Box::new(String::from("boom"));
 
         assert_eq!(panic_payload_message(payload.as_ref()), "boom");
+    }
+
+    fn read_luac_collection_fixture(relative_path: &str) -> Option<Vec<u8>> {
+        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("..")
+            .join("..")
+            .join("luac-collection")
+            .join(relative_path);
+
+        match fs::read(&path) {
+            Ok(bytes) => Some(bytes),
+            Err(error) if error.kind() == ErrorKind::NotFound => {
+                eprintln!(
+                    "skipping optional luac-collection fixture {} at {}",
+                    relative_path,
+                    path.display()
+                );
+                None
+            }
+            Err(error) => panic!(
+                "failed to read luac-collection fixture {} at {}: {}",
+                relative_path,
+                path.display(),
+                error
+            ),
+        }
     }
 }
