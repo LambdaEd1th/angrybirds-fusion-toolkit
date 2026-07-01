@@ -10,7 +10,7 @@ This tool is designed for modders, researchers, and enthusiasts who wish to anal
 * **Auto-Detection**: The `decrypt` command can automatically brute-force through known keys to identify the correct game and file category.
 * **Multiple File Categories**: Supports `native` (game data), `save` (progress files), `downloaded` (DLC), `fusion.registry`, and `beacon.registry`.
 * **Built-in Keys**: Includes built-in keys for supported games and shared registry files.
-* **Lua Bytecode Decompile**: Integrates `unluac v1.2.5` to turn decrypted `.luac` / `.out` bytecode into readable Lua source.
+* **Lua Bytecode Decompile**: Integrates `unluac v1.3.0` to turn decrypted `.luac` / `.out` bytecode into readable Lua source.
 * **Cross-Platform**: Compiles for **Windows**, **Linux**, and **macOS** (both Intel and Apple Silicon).
 
 ## 🎮 Supported Games
